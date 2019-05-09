@@ -1,0 +1,66 @@
+body{
+  background-color: #323232;
+  font-family: "Century Gothic", arial, sans-serif;
+  font-size: 15px White;
+  font-weight: bold;
+}
+#mittCanvas{
+  background-color: black;
+  display: block;
+  margin: auto;
+}
+div.knapper1{
+  display: flex;
+  margin: auto;
+  text-align: center;
+  width: 600px;
+  height: 30px;
+  padding: 10px;
+
+}
+div.knapper2{
+  display: flex;
+  margin: auto;
+  text-align: center;
+  width: 200px;
+  height: 40px;
+  padding: 10px;
+}
+#spEn{
+  flex-grow: 2;
+  padding: 5px;
+  margin: auto;
+  color: white;
+}
+#spTo{
+  flex-grow: 2;
+  padding: 5px;
+  margin: auto;
+  color: white;
+}
+#sp1Farge{
+  flex-grow: 3;
+  padding: 5px;
+}
+#sp2Farge{
+  flex-grow: 3;
+  padding: 5px;
+}
+#refresh{
+  flex-grow: 2;
+  padding: 5px;
+}
+#refresh:hover{
+  font-size-adjust: 1.5;
+  width: 65px;
+  height: 45px;
+}
+#pausePlay{
+  flex-grow: 3;
+  padding: 5px;
+}
+#pausePlay:hover{
+  font-size-adjust: 1.5;
+  width: 60px;
+  height: 45px;
+}

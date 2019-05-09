@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Pong</title>
+    <link rel="stylesheet" href="pong.css">
+  </head>
+  <body>
+
+    <canvas id="mittCanvas" width="600" height="400"></canvas>
+
+    <div class="knapper1">
+      <p id="spEn">Spiller 1</p>
+      <select id="sp1Farge"></select>
+      <p id="spTo">Spiller 2</p>
+      <select id="sp2Farge"></select>
+    </div>
+    <div class="knapper2">
+      <button id="pausePlay">Play</button>
+      <button id="refresh">Restart?</button>
+    </div>
+
+    <audio id="pop">
+      <source src="Lyder/Pop.wav" type="audio/wav">
+    </audio>
+    <audio id="poeng">
+      <source src="Lyder/poeng.mp3" type="audio/mp3">
+    </audio>
+    <audio id="vinner">
+      <source src="Lyder/vinner.mp3" type="audio/mp3">
+    </audio>
+
+
+    <script>
+      "use strict"
+
+      //Henter canvas elementet
+      var canvas = document.querySelector("#mittCanvas");
+      var ctx = canvas.getContext("2d");
+      //Henter dropdown menyene
+      var sp1FargeEl = document.querySelector("#sp1Farge");
+      var sp2FargeEl = document.querySelector("#sp2Farge");
+      //Henter knappene
+      var refreshEl = document.querySelector("#refresh");
+      var pausePlayEl = document.querySelector("#pausePlay")
+      //Henter lydfiler
+      var popEl = document.querySelector("#pop")
+      var poengEl = document.querySelector("#poeng")
+      var vinnerEl = document.querySelector("#vinner")
+
+
+      //EventListener som lytter til dropdown menyene om noe endres
+      sp1FargeEl.addEventListener("click", endreFarge1);
+      sp2FargeEl.addEventListener("click", endreFarge2);
+
+      //Lager en tom array som skal holde på tastene som trykkes
+      var taster = [];
+
+      //Lager en array med farger
+      var farger = ["white", "blue", "red", "yellow", "green", "purple", "orange"];
+
+      //Legger til fargene i begge menyene
+      for (var i = 0; i < farger.length; i++) {
+        sp1FargeEl.innerHTML += "<option>" + farger[i] + "</option>"
+        sp2FargeEl.innerHTML += "<option>" + farger[i] + "</option>"
+      }
+
+      //Lytter etter keydown- og keyup-hendelser
+      window.addEventListener("keydown", knappnedopp);
+      window.addEventListener("keyup", knappnedopp);
+
+      //Når en knapp holdes nede
+      function knappnedopp(e) {
+        if (e.type === "keydown") {
+          taster[e.keyCode] = true;
+        }else if (e.type === "keyup") {
+          delete taster [e.keyCode]
+        }
+      }
+
+      //Lager en klasse for spillerene
+      class Spiller {
+        constructor(x, y, bredde, hoyde, fart, opptast, nedtast, farge){
+
+          //Spillerens egenskaper
+          this.x = x;
+          this.y = y;
+          this.bredde = bredde;
+          this.hoyde = hoyde;
+          this.fart = fart;
+          this.opptast = opptast;
+          this.nedtast = nedtast;
+          this.farge = farge;
+        }
+
+        //Metoden tegn() tenger opp spilleren
+        tegn(){
+          ctx.fillStyle = this.farge;
+          ctx.fillRect(this.x, this.y, this.bredde, this.hoyde);
+        }
+
+        //Metode flytt() flytter spilleren
+        flytt(){
+          this.y += this.fart;
+
+          //Lager usynlige vegger til spillere
+          var bunn = this.y;
+          var topp = this.y + 100;
+
+          if (taster[this.opptast] && bunn > 0) {
+            this.y -= 4;
+            this.fart = -4;
+          }else if (taster[this.nedtast] && topp < canvas.height) {
+            this.y += 4;
+            this.fart = 4;
+          }else{
+            this.fart = 0;
+          }
+        }
+      }
+      //Lager de to spillerene
+      var spiller1 = new Spiller(50, 140, 20, 100, 0, 87, 83, sp1Farge);
+      var spiller2 = new Spiller(530, 120, 20, 100, 0, 38, 40, sp2Farge);
+
+      //Lager midt linjen med for løkke
+      var midt1 = new Spiller((canvas.width/2)-2, canvas.height-67, 4, 25, 0, 0, 0, "white")
+      var midt2 = new Spiller((canvas.width/2)-2, canvas.height-124, 4, 25, 0, 0, 0, "white")
+      var midt3 = new Spiller((canvas.width/2)-2, canvas.height-181, 4, 25, 0, 0, 0, "white")
+      var midt4 = new Spiller((canvas.width/2)-2, canvas.height-238, 4, 25, 0, 0, 0, "white")
+      var midt5 = new Spiller((canvas.width/2)-2, canvas.height-295, 4, 25, 0, 0, 0, "white")
+      var midt6 = new Spiller((canvas.width/2)-2, canvas.height-352, 4, 25, 0, 0, 0, "white")
+
+      //Lager top og bunn kant
+      var tak = new Spiller(0, 0, canvas.width, 10, 0, 0, 0, "white")
+      var gulv = new Spiller(0, canvas.height-10, 10, 0, 0, 0, "white")
+
+      //Funksjon som skal endre fargen til spiller 1
+      function endreFarge1() {
+        spiller1.farge = sp1FargeEl.options[sp1FargeEl.selectedIndex].value;
+      }
+
+      //Funskjon som skal endre fargen til spiller 2
+      function endreFarge2() {
+        spiller2.farge = sp2FargeEl.options[sp2FargeEl.selectedIndex].value;
+      }
+
+      //Lager en klasse for ballen
+      class Ball {
+        constructor(x, y, radius, xFart, yFart, farge){
+          this.x = x;
+          this.y = y;
+          this.radius = radius;
+          this.xFart = xFart;
+          this.yFart = yFart;
+          this.farge = farge;
+        }
+        //Metoden tegn() tegner ballen
+        tegn(){
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 2 * Math.PI, false);
+          ctx.fillStyle = this.farge;
+          ctx.fill();
+        }
+
+        //Metoden flytt() flytter ballen
+        flytt(sp1, sp2){
+          this.x += this.xFart;
+          this.y += this.yFart;
+
+          //Lager usynlige vegger til ball
+          var topp = this.y - 10;
+          var bunn = this.y + 10;
+          var venstre = this.x -10;
+          var hoyre = this.x + 10;
+
+          //Treffer topp-eller bunnvegg
+          if (topp < 0 || bunn > canvas.height) {
+            this.yFart = -this.yFart;
+          }
+          //Treffer spiller 1
+          if (venstre < sp1.x + sp1.bredde && topp < sp1.y + sp1.hoyde && bunn > sp1.y && hoyre > sp1.x) {
+            this.xFart = - this.xFart;
+            popEl.play()
+            //Hvis sp1 ikke står still
+            if (sp1.fart !== 0) {
+              this.yFart = sp1.fart;
+            }
+          }else if (venstre > sp1.x && hoyre < sp1.x && topp < sp1.y) {
+            this.yFart = -this.yFart
+          }else if (venstre > sp1.x && hoyre < sp1.x && bunn > sp1.y + sp1.hoyde) {
+            this.yFart = -this.yFart
+          }
+          //Treffer spiller 2
+          if (hoyre > sp2.x && topp < sp2.y + sp2.hoyde && bunn > sp2.y && venstre < sp2.x) {
+            this.xFart = -this.xFart;
+            popEl.play();
+            //Hvis sp2 ikke står still
+            if (sp2.fart !== 0) {
+              this.yFart = sp2.fart
+            }
+          }
+          //Forlater "banen"
+          if (this.x < 0 || this.x > canvas.width) {
+            if (this.x < 0) {
+              //Lyd som indikerer at det ble ett poeng
+              poengEl.play()
+              //Starter en fuksjon som gir spiller 2 ett poeng
+              score2fun()
+              this.yFart = 0;
+            }else if (this.x > canvas.width) {
+              //Lyd som indikerer at det ble ett poeng
+              poengEl.play()
+              //Starter en fuksjon som gir spiller 1 ett poeng
+              this.yFart = 0;
+              score1fun()
+            }
+            //Restarter ballen
+            this.x = 300;
+            this.y = 200;
+          }
+        }
+      }
+
+      //Lager ballen
+      var ball = new Ball(300, 200, 10, 8, 0, "white")
+
+      //Lager en class til stillingen
+      class Tekst {
+        constructor(x, y, font, tekst){
+          //Egenskapene til stillingen
+          this.x = x;
+          this.y = y;
+          this.font = font;
+          this.tekst = tekst;
+        }
+        //Forteller hva som skjer når den tegnes
+        tegn(){
+          ctx.font = this.font+"px Arial"
+          ctx.fillText(this.tekst, this.x, this.y)
+        }
+      }
+
+      //Endrer poengsummen til spillerene
+      var sp1Poeng = 0
+      var sp2Poeng = 0
+
+      //Lager to nye poengsummer
+      var score1 = new Tekst(150, 50, 50, sp1Poeng)
+      var score2 = new Tekst(400, 50, 50, sp2Poeng)
+      //Lager tekst til den som vinner
+      var vinner1 = new Tekst(canvas.width/4, canvas.height/3, 50, "Spiller 1 vant!")
+      var vinner2 = new Tekst(canvas.width/4, canvas.height/3, 50, "Spiller 2 vant!")
+      //Lager en intro til spiller 1
+      var intro0 = new Tekst(canvas.width/5, canvas.height/5, 25, "Spiller 1")
+      var intro1 = new Tekst(canvas.width/5, canvas.height/3, 25, "W = opp")
+      var intro2 = new Tekst(canvas.width/5, canvas.height/2, 25, "S = ned")
+      //Lager en intro til spiller 2
+      var intro3 = new Tekst(canvas.width*0.6, canvas.height/3, 25, "Pil opp = opp")
+      var intro4 = new Tekst(canvas.width*0.6, canvas.height/2, 25, "Pil ned = ned")
+      var intro5 = new Tekst(canvas.width*0.6, canvas.height/5, 25, "Spiller 2")
+
+      //Lager pause menyen
+      var pauseMerke = new Tekst(canvas.width/3,canvas.height/2, 30, "Game    Paused")
+
+      //En variabel til spill animasjonen
+      var game
+      //En variabel til intro animasjonen
+      var tutorial
+      //En variabel til pause animasjonen
+      var stopp
+
+      //Introduksjons spill
+      function intro() {
+        //Tømmer alt innhold på canvas-elementet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        //Flytter og tenger opp de to spillerne
+        spiller1.flytt();
+        spiller1.tegn();
+        spiller2.flytt();
+        spiller2.tegn();
+
+        //Tegner opp ballen
+        ball.tegn();
+
+        //Tegner opp intro til begge spillere
+        intro0.tegn()
+        intro1.tegn()
+        intro2.tegn()
+        intro3.tegn()
+        intro4.tegn()
+        intro5.tegn()
+
+        //Repiterer intro animasjonen
+        tutorial = requestAnimationFrame(intro)
+      }
+      //Starter intro animasjonen
+      tutorial = requestAnimationFrame(intro)
+
+      //Pause til spillet
+      function pause() {
+        //Tømmer alt innhold på canvas-elementet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        //Tegner pause merket
+        pauseMerke.tegn();
+
+        //Tegner midt banen
+        midt1.tegn();
+        midt2.tegn();
+        midt3.tegn();
+        midt4.tegn();
+        midt5.tegn();
+        midt6.tegn();
+
+        //Flytter og tenger opp de to spillerne
+        spiller1.tegn();
+        spiller2.tegn();
+
+        //Tegner opp ballen
+        ball.tegn();
+
+        //Tegner opp stillingen
+        score1.tegn()
+        score2.tegn()
+
+        //Repiterer Pause animasjonen
+        stopp = requestAnimationFrame(pause)
+      }
+
+      //Funskjon som øker scoren til spiller 1
+      function score1fun() {
+        sp1Poeng++
+        score1.tekst = sp1Poeng
+      }
+      //Funskjon som øker scoren til spiller 2
+      function score2fun() {
+        sp2Poeng++
+        score2.tekst = sp2Poeng
+      }
+
+      //Funskjon kjører selve spillet
+      function spill() {
+        //Tømmer alt innhold på canvas-elementet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        //Tegner midt banen
+        midt1.tegn();
+        midt2.tegn();
+        midt3.tegn();
+        midt4.tegn();
+        midt5.tegn();
+        midt6.tegn();
+
+        //Flytter og tenger opp de to spillerne
+        spiller1.flytt();
+        spiller1.tegn();
+        spiller2.flytt();
+        spiller2.tegn();
+
+        //Flytter og tegner opp ballen
+        ball.flytt(spiller1, spiller2);
+        ball.tegn();
+
+        //Tegner opp stillingen
+        score1.tegn()
+        score2.tegn()
+
+        // Vurderer om spillet skal starte på nytt.
+        // Om spiller 1 får 5 poeng vil spillet slutte
+        if (sp1Poeng == 5) {
+          //Lyd som indikerer at det ble en vi vinner
+          vinnerEl.play()
+          //Tømmer alt innhold på canvas-elementet
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          //Flytter og tenger opp de to spillerne
+          spiller1.tegn();
+          spiller2.tegn();
+          //Tegner opp ballen
+          ball.tegn();
+          //Tegner opp stillingen
+          score1.tegn()
+          score2.tegn()
+          //Tegner opp vinner 1
+          vinner1.tegn();
+        // Om spiller 2 får 5 poeng vil spillet slutte
+        }else if (sp2Poeng == 5) {
+          //Lyd som indikerer at det ble en vi vinner
+          vinnerEl.play()
+          //Tømmer alt innhold på canvas-elementet
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          //Flytter og tenger opp de to spillerne
+          spiller1.tegn();
+          spiller2.tegn();
+          //Tegner opp ballen
+          ball.tegn();
+          //Tegner opp stillingen
+          score1.tegn()
+          score2.tegn()
+          //Tegner opp vinner 2
+          vinner2.tegn()
+        //Om ingen har nådd score vil spillet fortsette
+        }else{
+          // Gjentar funsjonen spill()
+          game = requestAnimationFrame(spill)
+        }
+      }
+
+      //Funskjon som pauser og starter spill
+      pausePlayEl.onclick = function() {
+        //Hvis knappen sin innerHTML er play
+        if (pausePlayEl.innerHTML == "Play") {
+          //Stopper intro animasjonen
+          cancelAnimationFrame(tutorial)
+          //Stopper pause animasjonen
+          cancelAnimationFrame(stopp)
+          //Starter spill animasjonen
+          game = requestAnimationFrame(spill)
+          //Endrer knappen sin innerHTML til Pause
+          pausePlayEl.innerHTML = "Pause"
+        //Hvis knappen sin innerHTML er Pause
+        }else if(pausePlayEl.innerHTML = "Pause"){
+          //Stopper intro animasjonen
+          cancelAnimationFrame(tutorial)
+          //Stopper game animasjonen
+          cancelAnimationFrame(game)
+          //Starter pause animasjonen
+          stopp = requestAnimationFrame(pause)
+          //Endrer knappen sin innerHTML til Play
+          pausePlayEl.innerHTML = "Play"
+        }
+      }
+
+      //Funksjon som refresher nettsiden
+      refreshEl.onclick = function() {
+        location.reload()
+      }
+
+
+    </script>
+  </body>
+</html>
